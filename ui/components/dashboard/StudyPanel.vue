@@ -1,29 +1,42 @@
 <script setup>
-import type { A2UISurface } from '~/types/a2ui'
+const props = defineProps({
+  surface: {
+    type: Object,
+    default: null
+  },
+  state: {
+    type: String,
+    default: 'idle'
+  },
+  topic: {
+    type: String,
+    default: ''
+  },
+  feedback: {
+    type: String,
+    default: null
+  },
+  isCorrect: {
+    type: Boolean,
+    default: null
+  },
+  loading: {
+    type: Boolean,
+    default: false
+  },
+  isActive: {
+    type: Boolean,
+    default: false
+  }
+})
 
-const props = defineProps<{
-  surface: A2UISurface | null
-  state: string
-  topic: string
-  feedback: string | null
-  isCorrect: boolean | null
-  loading: boolean
-  isActive: boolean
-}>()
-
-const emit = defineEmits<{
-  start: [topic: string]
-  next: []
-  answer: [index: number]
-  socraticResponse: [response: string]
-  close: []
-}>()
+const emit = defineEmits(['start', 'next', 'answer', 'socraticResponse', 'close'])
 
 const inputTopic = ref('Método Científico')
-const selectedOption = ref<number | null>(null)
+const selectedOption = ref(null)
 const socraticText = ref('')
 
-const stateLabel: Record<string, string> = {
+const stateLabel = {
   idle: 'Sin iniciar',
   capsule: 'Contenido de estudio',
   quiz: 'Pregunta',
@@ -31,7 +44,7 @@ const stateLabel: Record<string, string> = {
   completed: 'Completado'
 }
 
-const stateColor: Record<string, string> = {
+const stateColor = {
   idle: 'badge-ghost',
   capsule: 'badge-primary',
   quiz: 'badge-accent',
@@ -39,7 +52,7 @@ const stateColor: Record<string, string> = {
   completed: 'badge-success'
 }
 
-function handleAnswer(index: number) {
+function handleAnswer(index) {
   selectedOption.value = index
   emit('answer', index)
 }

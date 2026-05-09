@@ -59,6 +59,10 @@ const faceClass = computed(() => {
   ]
 })
 
+const flipStyle = computed(() => ({
+  transform: revealed.value ? 'rotateY(180deg)' : 'rotateY(0deg)'
+}))
+
 function flipCard() {
   revealed.value = !revealed.value
   emit('flip', {
@@ -71,7 +75,7 @@ function flipCard() {
 <template>
   <button :class="frameClass" type="button" :aria-pressed="revealed" @click="flipCard">
     <span class="sr-only">{{ revealed ? 'Ver pregunta' : 'Ver respuesta' }}</span>
-    <span class="flashcard-inner" :class="{ 'is-revealed': revealed }">
+    <span class="flashcard-inner" :style="flipStyle">
       <span :class="[faceClass, 'flashcard-face-front']" :aria-hidden="revealed">
         <span>
           <span class="text-xs font-semibold uppercase text-primary">{{ promptLabel }}</span>
@@ -110,10 +114,6 @@ function flipCard() {
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
   will-change: transform;
-}
-
-.flashcard-inner.is-revealed {
-  transform: rotateY(180deg);
 }
 
 .flashcard-face {

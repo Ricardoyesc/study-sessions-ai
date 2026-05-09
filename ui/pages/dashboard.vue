@@ -30,7 +30,7 @@ async function handleLogout() {
   await navigateTo('/')
 }
 
-async function handleStartSession(topic: string) {
+async function handleStartSession(topic) {
   await study.startSession(topic)
   await study.nextItem()
 }
@@ -39,11 +39,11 @@ async function handleNext() {
   await study.nextItem()
 }
 
-async function handleAnswer(index: number) {
+async function handleAnswer(index) {
   await study.submitAnswer(index)
 }
 
-async function handleSocraticResponse(response: string) {
+async function handleSocraticResponse(response) {
   await study.submitSocraticResponse(response)
 }
 
