@@ -19,8 +19,8 @@ const percent = computed(() => Math.round((props.value / safeMax.value) * 100))
 </script>
 
 <template>
-  <div class="a2ui-progress-enter min-w-[12rem]">
-    <div class="mb-2 flex items-center justify-between gap-3 text-xs text-base-content/60">
+  <div class="a2ui-progress-enter min-w-[12rem] rounded-lg border border-base-300 bg-base-100 p-3 shadow-sm">
+    <div class="mb-2 flex items-center justify-between gap-3 text-xs font-semibold text-base-content/70">
       <span>{{ label }}</span>
       <span>{{ percent }}%</span>
     </div>

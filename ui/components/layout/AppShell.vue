@@ -1,4 +1,6 @@
 <script setup>
+import ThemeSelector from './ThemeSelector.vue'
+import { useTheme } from '~/composables/useTheme'
 
 const props = defineProps({
   student: {
@@ -12,6 +14,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['logout'])
+const { currentTheme } = useTheme()
 
 const initials = computed(() => {
   return props.student.name
@@ -24,7 +27,7 @@ const initials = computed(() => {
 </script>
 
 <template>
-  <div data-theme="light" class="min-h-screen bg-base-200 text-base-content">
+  <div :data-theme="currentTheme" class="min-h-screen bg-base-200 text-base-content">
     <header class="sticky top-0 z-30 border-b border-base-300 bg-base-100/95 backdrop-blur">
       <div class="mx-auto flex min-h-16 max-w-[1440px] items-center justify-between gap-4 px-4 md:px-6">
         <div class="flex min-w-0 items-center gap-3">
@@ -38,6 +41,7 @@ const initials = computed(() => {
         </div>
 
         <div class="flex items-center gap-3">
+          <ThemeSelector />
           <span class="badge hidden sm:inline-flex" :class="authMode === 'api' ? 'badge-success' : 'badge-warning'">
             {{ authMode === 'api' ? 'API conectada' : 'Modo demo' }}
           </span>

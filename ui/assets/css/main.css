@@ -17,5 +17,5 @@ textarea {
 }
 
 .prose strong {
-  color: hsl(var(--n));
+  color: var(--color-neutral);
 }

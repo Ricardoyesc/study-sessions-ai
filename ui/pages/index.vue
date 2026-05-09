@@ -1,9 +1,13 @@
 <script setup>
+import ThemeSelector from '~/components/layout/ThemeSelector.vue'
+import { useTheme } from '~/composables/useTheme'
+
 const email = ref('sofia.martinez@example.com')
 const password = ref('demo-password')
 const formError = ref(null)
 
 const { isAuthenticated, loading, errorMessage, login } = useAuth()
+const { currentTheme } = useTheme()
 
 onMounted(() => {
   if (isAuthenticated.value) {
@@ -30,7 +34,11 @@ async function submitLogin() {
 </script>
 
 <template>
-  <div data-theme="light" class="min-h-screen bg-base-200 text-base-content">
+  <div :data-theme="currentTheme" class="min-h-screen bg-base-200 text-base-content">
+    <header class="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
+      <ThemeSelector />
+    </header>
+
     <main class="grid min-h-screen lg:grid-cols-[0.95fr_1.05fr]">
       <section class="flex items-center border-b border-base-300 bg-base-100 px-4 py-10 lg:border-b-0 lg:border-r lg:px-10">
         <div class="mx-auto w-full max-w-md">

@@ -12,7 +12,7 @@ defineProps({
 </script>
 
 <template>
-  <figure class="a2ui-media-enter group overflow-hidden rounded-lg border border-base-300 bg-base-100 transition duration-200 ease-out hover:shadow-md motion-reduce:transition-none">
+  <figure class="a2ui-media-enter group overflow-hidden rounded-lg border border-base-300 bg-base-200 shadow-sm transition duration-200 ease-out hover:shadow-md motion-reduce:transition-none">
     <img class="aspect-video w-full object-cover transition duration-300 ease-out group-hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none" :src="url" :alt="altText">
   </figure>
 </template>

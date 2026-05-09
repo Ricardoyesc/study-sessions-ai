@@ -12,7 +12,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="a2ui-media-enter rounded-lg transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-sm motion-reduce:transform-none motion-reduce:transition-none">
+  <div class="a2ui-media-enter rounded-lg border border-base-300 bg-base-200 p-2 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none">
     <audio class="w-full" controls :autoplay="autoPlay" :src="url" />
   </div>
 </template>

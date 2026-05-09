@@ -70,7 +70,7 @@ function resetAndNext() {
 </script>
 
 <template>
-  <div class="card bg-base-100 border border-base-300 shadow-lg">
+  <div class="card border border-base-300 bg-base-200/70 shadow-lg">
     <div class="card-body p-4">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -90,10 +90,10 @@ function resetAndNext() {
             v-model="inputTopic"
             type="text"
             placeholder="Tema de estudio..."
-            class="input input-bordered flex-1"
+            class="study-input-contrast input flex-1 placeholder:text-base-content/45 focus:outline-none"
             @keyup.enter="emit('start', inputTopic)"
           />
-          <button class="btn btn-primary" :disabled="loading" @click="emit('start', inputTopic)">
+          <button class="btn btn-primary shadow-sm" :disabled="loading" @click="emit('start', inputTopic)">
             Comenzar
           </button>
         </div>
@@ -101,7 +101,7 @@ function resetAndNext() {
           <button
             v-for="t in ['Método Científico', 'Física Cuántica', 'Álgebra Lineal', 'Biología Celular', 'Teoría de la Relatividad']"
             :key="t"
-            class="btn btn-outline btn-xs"
+            class="study-chip-contrast btn btn-xs shadow-sm"
             @click="inputTopic = t; emit('start', t)"
           >
             {{ t }}
@@ -123,7 +123,7 @@ function resetAndNext() {
         <div class="flex flex-wrap gap-2 pt-2">
           <button
             v-if="state === 'quiz'"
-            class="btn btn-primary btn-sm"
+            class="btn btn-primary btn-sm shadow-sm"
             @click="handleAnswer(selectedOption ?? 0)"
           >
             Enviar respuesta ({{ (selectedOption ?? 0) + 1 }})
@@ -132,18 +132,18 @@ function resetAndNext() {
           <div v-if="state === 'remediation' || (feedback && !isCorrect)" class="flex flex-col gap-2 w-full">
             <textarea
               v-model="socraticText"
-              class="textarea textarea-bordered w-full"
+              class="study-input-contrast textarea w-full placeholder:text-base-content/45 focus:outline-none"
               rows="3"
               placeholder="Escribe tu reflexión aquí..."
             />
-            <button class="btn btn-secondary btn-sm" @click="handleSocraticSubmit">
+            <button class="btn btn-secondary btn-sm shadow-sm" @click="handleSocraticSubmit">
               Enviar reflexión
             </button>
           </div>
 
           <button
             v-if="state === 'capsule' || (feedback && isCorrect) || state === 'completed'"
-            class="btn btn-secondary btn-sm"
+            class="btn btn-secondary btn-sm shadow-sm"
             :disabled="loading"
             @click="resetAndNext"
           >
@@ -154,3 +154,28 @@ function resetAndNext() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.study-input-contrast {
+  border: 1px solid color-mix(in oklab, var(--color-base-content) 22%, transparent) !important;
+  background: var(--color-base-100) !important;
+  box-shadow: inset 0 2px 4px color-mix(in oklab, var(--color-base-content) 8%, transparent);
+}
+
+.study-input-contrast:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 18%, transparent), 0 1px 2px color-mix(in oklab, var(--color-base-content) 10%, transparent);
+}
+
+.study-chip-contrast {
+  border: 1px solid color-mix(in oklab, var(--color-primary) 55%, transparent) !important;
+  background: color-mix(in oklab, var(--color-primary) 12%, var(--color-base-100)) !important;
+  color: var(--color-primary) !important;
+}
+
+.study-chip-contrast:hover {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary-content) !important;
+}
+</style>

@@ -31,10 +31,10 @@ const revealed = ref(props.initiallyRevealed)
 
 const frameClass = computed(() => {
   const tones = {
-    primary: 'border-primary/25',
-    secondary: 'border-secondary/25',
-    accent: 'border-accent/25',
-    warning: 'border-warning/30',
+    primary: 'border-primary/45',
+    secondary: 'border-secondary/45',
+    accent: 'border-accent/45',
+    warning: 'border-warning/50',
     base: 'border-base-300'
   }
 
@@ -46,11 +46,11 @@ const frameClass = computed(() => {
 
 const faceClass = computed(() => {
   const tones = {
-    primary: 'bg-primary/5',
-    secondary: 'bg-secondary/5',
-    accent: 'bg-accent/5',
-    warning: 'bg-warning/10',
-    base: 'bg-base-100'
+    primary: 'bg-primary/10',
+    secondary: 'bg-secondary/10',
+    accent: 'bg-accent/10',
+    warning: 'bg-warning/15',
+    base: 'bg-base-200/80'
   }
 
   return [

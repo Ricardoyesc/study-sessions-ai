@@ -1,5 +1,7 @@
 <script setup>
 import SurfaceRenderer from '~/components/a2ui/SurfaceRenderer.vue'
+import ThemeSelector from '~/components/layout/ThemeSelector.vue'
+import { useTheme } from '~/composables/useTheme'
 
 const topics = [
   'Dualidad onda-particula',
@@ -32,6 +34,7 @@ const tones = ['base', 'primary', 'secondary', 'accent', 'warning']
 const variants = ['h1', 'h2', 'h3', 'body', 'label', 'caption']
 const eventLog = ref([])
 const seed = ref(Date.now())
+const { currentTheme } = useTheme()
 
 function pick(list) {
   return list[Math.floor(Math.random() * list.length)]
@@ -274,14 +277,15 @@ function handleA2UIEvent(event) {
 </script>
 
 <template>
-  <div data-theme="light" class="min-h-screen bg-base-200 text-base-content">
+  <div :data-theme="currentTheme" class="min-h-screen bg-base-200 text-base-content">
     <header class="sticky top-0 z-20 border-b border-base-300 bg-base-100/95 backdrop-blur">
       <div class="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-6">
         <div>
           <p class="text-sm font-semibold uppercase text-primary">A2UI Playground</p>
           <h1 class="text-2xl font-bold text-neutral">Primitives con props validos</h1>
         </div>
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <ThemeSelector />
           <NuxtLink class="btn btn-ghost btn-sm" to="/dashboard">Dashboard</NuxtLink>
           <button class="btn btn-primary btn-sm" type="button" @click="regenerate">Randomizar datos</button>
         </div>

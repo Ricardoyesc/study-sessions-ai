@@ -16,11 +16,11 @@ const props = defineProps({
 
 const cardClass = computed(() => {
   const tones = {
-    primary: 'border-primary/20 bg-primary/5',
-    secondary: 'border-secondary/20 bg-secondary/5',
-    accent: 'border-accent/25 bg-accent/5',
-    warning: 'border-warning/30 bg-warning/10',
-    base: 'border-base-300 bg-base-100'
+    primary: 'border-primary/35 bg-primary/10',
+    secondary: 'border-secondary/35 bg-secondary/10',
+    accent: 'border-accent/40 bg-accent/10',
+    warning: 'border-warning/45 bg-warning/15',
+    base: 'border-base-300 bg-base-200/70'
   }
 
   return [
