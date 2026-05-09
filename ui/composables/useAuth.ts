@@ -72,13 +72,15 @@ export function useAuth() {
   async function fetchProfile(authToken: string, email: string) {
     try {
       const profile = await $fetch<MeResponse>(`${config.public.apiBase}/api/users/me`, {
+        timeout: 5000,
         headers: {
           Authorization: `Bearer ${authToken}`
         }
       })
 
       student.value = buildProfileFromEmail(profile.email ?? email, profile)
-    } catch {
+    } catch (err) {
+      console.warn('Profile fetch failed, using email-based profile:', err)
       student.value = buildProfileFromEmail(email)
     }
 
@@ -94,6 +96,7 @@ export function useAuth() {
     try {
       const response = await $fetch<LoginResponse>(`${config.public.apiBase}/api/users/login`, {
         method: 'POST',
+        timeout: 5000,
         body: { email, password }
       })
 
@@ -108,7 +111,8 @@ export function useAuth() {
 
       await fetchProfile(response.token, email)
       return { ok: true, mode: mode.value }
-    } catch {
+    } catch (err) {
+      console.warn('Login API failed, falling back to demo mode:', err)
       token.value = 'demo-token'
       mode.value = 'demo'
       student.value = buildProfileFromEmail(email)

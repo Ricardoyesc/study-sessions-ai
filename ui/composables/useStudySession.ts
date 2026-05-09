@@ -22,6 +22,13 @@ interface QuizAnswerResponse {
   message: string
 }
 
+function authHeaders(token: string | null) {
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+}
+
 export function useStudySession() {
   const config = useRuntimeConfig()
   const { token } = useAuth()
@@ -39,7 +46,8 @@ export function useStudySession() {
     try {
       const resp = await $fetch<SessionResponse>(`${config.public.apiBase}/api/sessions`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token.value}` },
+        timeout: 10000,
+        headers: authHeaders(token.value),
         body: { topic }
       })
       sessionId.value = resp.id
@@ -60,7 +68,7 @@ export function useStudySession() {
     try {
       const resp = await $fetch<NextItemResponse>(
         `${config.public.apiBase}/api/sessions/${sessionId.value}/next?topic=${encodeURIComponent(sessionTopic.value)}`,
-        { headers: { Authorization: `Bearer ${token.value}` } }
+        { timeout: 15000, headers: authHeaders(token.value) }
       )
       sessionState.value = resp.state
       currentSurface.value = resp.surface
@@ -83,7 +91,8 @@ export function useStudySession() {
         `${config.public.apiBase}/api/sessions/${sessionId.value}/quiz/answer`,
         {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token.value}` },
+          timeout: 10000,
+          headers: authHeaders(token.value),
           body: { selected_index: selectedIndex }
         }
       )
@@ -107,7 +116,8 @@ export function useStudySession() {
         `${config.public.apiBase}/api/sessions/${sessionId.value}/socratic/response`,
         {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token.value}` },
+          timeout: 10000,
+          headers: authHeaders(token.value),
           body: { student_response: studentResponse }
         }
       )
