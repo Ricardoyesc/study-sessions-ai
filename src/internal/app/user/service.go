@@ -10,7 +10,6 @@ import (
 	"gorm.io/gorm"
 
 	"sai-server/internal/domain"
-	"github.com/google/uuid"
 )
 
 type Service struct {
@@ -37,8 +36,6 @@ func (s *Service) Register(ctx context.Context, email, password string) (*domain
 		Email:        email,
 		PasswordHash: string(hash),
 	}
-
-	user.ID = uuid.New().String()
 
 	if err := s.db.Create(&user).Error; err != nil {
 		return nil, "", err

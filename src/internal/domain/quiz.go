@@ -5,10 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type QuizItem struct {
-	ID            string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID            string    `gorm:"type:uuid;primaryKey" json:"id"`
 	ConceptID     string    `gorm:"type:uuid;not null;index" json:"concept_id"`
 	DifficultyIRT float64   `gorm:"not null" json:"difficulty_irt"`
 	Discrimination float64  `gorm:"default:1.0" json:"discrimination"`
@@ -21,17 +24,31 @@ type QuizItem struct {
 	Concept Concept `gorm:"foreignKey:ConceptID" json:"-"`
 }
 
+func (q *QuizItem) BeforeCreate(tx *gorm.DB) error {
+	if q.ID == "" {
+		q.ID = uuid.New().String()
+	}
+	return nil
+}
+
 type Interaction struct {
-	ID                  string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ID                  string    `gorm:"type:uuid;primaryKey" json:"id"`
 	SessionID           string    `gorm:"type:uuid;not null;index" json:"session_id"`
-	Type               string    `gorm:"not null" json:"type"`
-	Payload            JSONMap   `gorm:"type:jsonb;not null" json:"payload"`
-	WasCorrect         *bool     `json:"was_correct,omitempty"`
-	ResponseTimeMs     *int      `json:"response_time_ms,omitempty"`
-	RemediationGenerated *string `gorm:"type:jsonb" json:"remediation_generated,omitempty"`
-	CreatedAt          time.Time `json:"created_at"`
+	Type                string    `gorm:"not null" json:"type"`
+	Payload             JSONMap   `gorm:"type:jsonb;not null" json:"payload"`
+	WasCorrect          *bool     `json:"was_correct,omitempty"`
+	ResponseTimeMs      *int      `json:"response_time_ms,omitempty"`
+	RemediationGenerated *string  `gorm:"type:jsonb" json:"remediation_generated,omitempty"`
+	CreatedAt           time.Time `json:"created_at"`
 
 	Session Session `gorm:"foreignKey:SessionID" json:"-"`
+}
+
+func (i *Interaction) BeforeCreate(tx *gorm.DB) error {
+	if i.ID == "" {
+		i.ID = uuid.New().String()
+	}
+	return nil
 }
 
 type JSONMap map[string]interface{}
