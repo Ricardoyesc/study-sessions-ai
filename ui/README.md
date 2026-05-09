@@ -1,75 +1,38 @@
-# Nuxt Minimal Starter
+# Study Sessions AI UI
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Nuxt UI for the student-facing adaptive study flow. The first screen is login; after authentication, the student sees a dashboard with profile information, subjects, evaluations, and an A2UI-rendered improvement panel.
 
 ## Setup
 
-Make sure to install dependencies:
-
 ```bash
-# npm
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+## Development
 
 ```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
+npm run dev -- --host 127.0.0.1
 ```
 
-## Production
+Open `http://127.0.0.1:3000/`.
 
-Build the application for production:
+The UI tries to use the Go backend from the repository `src` folder:
 
 ```bash
-# npm
+NUXT_PUBLIC_API_BASE=http://127.0.0.1:8080
+NUXT_PUBLIC_WS_BASE=ws://127.0.0.1:8080
+```
+
+Current backend integration:
+
+- `POST /api/users/login` is used for login when the backend is available.
+- `GET /api/users/me` is used to hydrate profile details when available.
+- `WS /ws/session/:sessionId` is prepared for A2UI messages.
+
+Subjects, evaluations, and generated A2UI surfaces currently use TypeScript fixtures in `data/student-fixtures.ts` until the Go backend exposes those contracts.
+
+## Build
+
+```bash
 npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
 ```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.

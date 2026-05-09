@@ -1,57 +1,122 @@
+<script setup>
+const email = ref('sofia.martinez@example.com')
+const password = ref('demo-password')
+const formError = ref(null)
+
+const { isAuthenticated, loading, errorMessage, login } = useAuth()
+
+onMounted(() => {
+  if (isAuthenticated.value) {
+    navigateTo('/dashboard')
+  }
+})
+
+async function submitLogin() {
+  formError.value = null
+
+  if (!email.value.includes('@')) {
+    formError.value = 'Ingresa un email valido.'
+    return
+  }
+
+  if (password.value.length < 6) {
+    formError.value = 'La contrasena debe tener al menos 6 caracteres.'
+    return
+  }
+
+  await login(email.value, password.value)
+  await navigateTo('/dashboard')
+}
+</script>
+
 <template>
-  <div data-theme="study" class="min-h-screen bg-base-100 text-base-content">
-    <header class="navbar sticky top-0 z-10 border-b border-base-300 bg-base-100/90 px-4 backdrop-blur md:px-8">
-      <div class="navbar-start">
-        <span class="text-lg font-bold text-neutral">Study Sessions AI</span>
-      </div>
-      <nav class="navbar-end gap-2">
-        <a href="#sesiones" class="btn btn-ghost btn-sm">Sesiones</a>
-        <a href="#agenda" class="btn btn-primary btn-sm">Agenda</a>
-      </nav>
-    </header>
-
-    <main>
-      <WelcomeHero />
-
-      <section id="sesiones" class="bg-base-200 py-12">
-        <div class="mx-auto grid max-w-6xl gap-6 px-4 md:px-8">
-          <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+  <div data-theme="light" class="min-h-screen bg-base-200 text-base-content">
+    <main class="grid min-h-screen lg:grid-cols-[0.95fr_1.05fr]">
+      <section class="flex items-center border-b border-base-300 bg-base-100 px-4 py-10 lg:border-b-0 lg:border-r lg:px-10">
+        <div class="mx-auto w-full max-w-md">
+          <div class="mb-8 flex items-center gap-3">
+            <div class="grid h-11 w-11 place-items-center rounded-lg bg-primary text-sm font-bold text-primary-content">
+              SAI
+            </div>
             <div>
-              <p class="font-semibold uppercase tracking-wide text-primary">Plan de hoy</p>
-              <h2 class="text-3xl font-bold text-neutral">Tres pasos para entrar en foco</h2>
+              <p class="font-bold text-neutral">Study Sessions AI</p>
+              <p class="text-sm text-base-content/60">Acceso estudiante</p>
+            </div>
+          </div>
+
+          <h1 class="text-3xl font-bold text-neutral">Inicia sesion para continuar tu plan adaptativo</h1>
+          <p class="mt-3 text-sm leading-6 text-base-content/70">
+            El panel carga tu perfil, materias y evaluaciones para que el agente proponga una intervencion enfocada.
+          </p>
+
+          <form class="mt-8 grid gap-4" @submit.prevent="submitLogin">
+            <label class="form-control">
+              <span class="label-text font-medium">Email</span>
+              <input
+                v-model="email"
+                class="input input-bordered mt-1"
+                type="email"
+                autocomplete="email"
+                required
+              >
+            </label>
+
+            <label class="form-control">
+              <span class="label-text font-medium">Contrasena</span>
+              <input
+                v-model="password"
+                class="input input-bordered mt-1"
+                type="password"
+                autocomplete="current-password"
+                required
+              >
+            </label>
+
+            <div v-if="formError || errorMessage" class="alert alert-warning py-3 text-sm">
+              <span>{{ formError ?? errorMessage }}</span>
             </div>
 
-            <div class="stats stats-vertical shadow-sm sm:stats-horizontal">
-              <div class="stat py-3">
-                <div class="stat-title">Racha</div>
-                <div class="stat-value text-primary">7</div>
+            <button class="btn btn-primary mt-2" type="submit" :disabled="loading">
+              <span v-if="loading" class="loading loading-spinner loading-sm" />
+              Entrar al panel
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <section class="flex items-center px-4 py-10 lg:px-10">
+        <div class="mx-auto grid w-full max-w-2xl gap-4">
+          <div class="rounded-lg border border-base-300 bg-base-100 p-5 shadow-sm">
+            <p class="text-sm font-semibold uppercase text-primary">Flujo activo</p>
+            <div class="mt-4 grid gap-3">
+              <div class="flex items-center justify-between rounded-lg bg-base-200 px-4 py-3">
+                <span class="font-medium text-neutral">Perfil del estudiante</span>
+                <span class="badge badge-success badge-outline">Listo</span>
               </div>
-              <div class="stat py-3">
-                <div class="stat-title">Minutos</div>
-                <div class="stat-value text-secondary">90</div>
+              <div class="flex items-center justify-between rounded-lg bg-base-200 px-4 py-3">
+                <span class="font-medium text-neutral">Materias y evaluaciones</span>
+                <span class="badge badge-primary">Dashboard</span>
+              </div>
+              <div class="flex items-center justify-between rounded-lg bg-base-200 px-4 py-3">
+                <span class="font-medium text-neutral">Intervencion A2UI</span>
+                <span class="badge badge-warning badge-outline">Agente</span>
               </div>
             </div>
           </div>
 
-          <div class="grid gap-4 md:grid-cols-3">
-            <StudySessionCard
-              title="Calentar memoria"
-              description="Revisa los conceptos clave y marca lo que necesita una segunda vuelta."
-              duration="15 min"
-              status="Ligero"
-            />
-            <StudySessionCard
-              title="Practicar activo"
-              description="Trabaja ejercicios cortos con pausas medidas para sostener el progreso."
-              duration="45 min"
-              status="Principal"
-            />
-            <StudySessionCard
-              title="Cerrar con resumen"
-              description="Convierte lo aprendido en notas claras para la siguiente sesión."
-              duration="30 min"
-              status="Refuerzo"
-            />
+          <div class="grid gap-4 sm:grid-cols-3">
+            <div class="rounded-lg border border-base-300 bg-base-100 p-4 text-center shadow-sm">
+              <p class="text-xs text-base-content/60">Objetivo</p>
+              <p class="text-2xl font-bold text-neutral">85%</p>
+            </div>
+            <div class="rounded-lg border border-base-300 bg-base-100 p-4 text-center shadow-sm">
+              <p class="text-xs text-base-content/60">Materias</p>
+              <p class="text-2xl font-bold text-neutral">3</p>
+            </div>
+            <div class="rounded-lg border border-base-300 bg-base-100 p-4 text-center shadow-sm">
+              <p class="text-xs text-base-content/60">Modo</p>
+              <p class="text-2xl font-bold text-neutral">A2UI</p>
+            </div>
           </div>
         </div>
       </section>

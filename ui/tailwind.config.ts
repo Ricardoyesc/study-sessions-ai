@@ -15,6 +15,7 @@ export default {
   plugins: [daisyui],
   daisyui: {
     themes: [
+      'light',
       {
         study: {
           primary: '#2563eb',
