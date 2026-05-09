@@ -18,7 +18,7 @@ export default {
         'light',
         'dark --prefersdark',
         'cupcake',
-        'corporate  --default',
+        'corporate --default',
         'emerald',
         'winter',
         'night'

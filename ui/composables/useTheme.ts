@@ -1,4 +1,5 @@
 const THEME_STORAGE_KEY = 'study-sessions-theme'
+const DEFAULT_THEME = 'corporate'
 
 export const availableThemes = [
   'light',
@@ -11,11 +12,11 @@ export const availableThemes = [
 ]
 
 export function useTheme() {
-  const currentTheme = useState('current-theme', () => 'light')
+  const currentTheme = useState('current-theme', () => DEFAULT_THEME)
   const initialized = useState('theme-initialized', () => false)
 
   function normalizeTheme(theme: string | null) {
-    return theme && availableThemes.includes(theme) ? theme : 'light'
+    return theme && availableThemes.includes(theme) ? theme : DEFAULT_THEME
   }
 
   function applyTheme(theme: string) {
