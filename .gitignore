@@ -1,0 +1,9 @@
+node_modules
+
+# Nuxt UI generated files when commands are run from the repository root
+.nuxt
+.output
+.data
+.nitro
+.cache
+dist
