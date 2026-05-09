@@ -18,7 +18,11 @@ func NewSessionHandler(svc *session.Service, pipeline *session.Pipeline) *Sessio
 }
 
 func (h *SessionHandler) Create(c *gin.Context) {
-	userID, _ := c.Get("userID")
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authenticated"})
+		return
+	}
 
 	var req struct {
 		Topic string `json:"topic" binding:"required"`
@@ -28,17 +32,17 @@ func (h *SessionHandler) Create(c *gin.Context) {
 		return
 	}
 
-	s, err := h.svc.CreateSession(c.Request.Context(), userID.(string), req.Topic)
+	s, err := h.svc.CreateSession(c.Request.Context(), userIDVal.(string), req.Topic)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"id":        s.ID,
-		"state":     s.State,
-		"topic":     req.Topic,
-		"ws_url":    "/ws/session/" + s.ID,
+		"id":     s.ID,
+		"state":  s.State,
+		"topic":  req.Topic,
+		"ws_url": "ws://127.0.0.1:8080/ws/session/" + s.ID,
 	})
 }
 
@@ -52,10 +56,10 @@ func (h *SessionHandler) Get(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":                   s.ID,
-		"state":                s.State,
-		"target_success_rate":  s.TargetSuccessRate,
-		"started_at":           s.StartedAt,
+		"id":                  s.ID,
+		"state":               s.State,
+		"target_success_rate": s.TargetSuccessRate,
+		"started_at":          s.StartedAt,
 	})
 }
 
@@ -74,10 +78,10 @@ func (h *SessionHandler) Next(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"state":       result.State,
-		"topic":       result.Topic,
-		"message":     result.Message,
-		"surface":     result.A2UISurface,
+		"state":   result.State,
+		"topic":   result.Topic,
+		"message": result.Message,
+		"surface": result.A2UISurface,
 	})
 }
 
