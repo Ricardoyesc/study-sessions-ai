@@ -36,6 +36,10 @@ const componentListeners = computed(() => {
     return { click: (payload) => forwardEvent('click', payload) }
   }
 
+  if (component.value.type === 'Flashcard') {
+    return { flip: (payload) => forwardEvent('flip', payload) }
+  }
+
   if (component.value.type === 'QuizCard' || component.value.type === 'SocraticDialog') {
     return { submit: (payload) => forwardEvent('submit', payload) }
   }

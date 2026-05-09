@@ -9,6 +9,25 @@ const topics = [
   'Relatividad especial'
 ]
 
+const flashcards = [
+  {
+    prompt: 'Concepto: zona de desarrollo proximo',
+    answer: 'Distancia entre lo que el estudiante resuelve solo y lo que logra con apoyo guiado.'
+  },
+  {
+    prompt: 'Pregunta: que mide theta en IRT?',
+    answer: 'La habilidad estimada del estudiante para responder correctamente items de cierta dificultad.'
+  },
+  {
+    prompt: 'Concepto: dual coding',
+    answer: 'Aprender combinando representaciones verbales y visuales para reforzar la memoria.'
+  },
+  {
+    prompt: 'Pregunta: cual es la meta de la regla del 85%?',
+    answer: 'Mantener desafios con suficiente exito esperado para aprender sin frustracion.'
+  }
+]
+
 const tones = ['base', 'primary', 'secondary', 'accent', 'warning']
 const variants = ['h1', 'h2', 'h3', 'body', 'label', 'caption']
 const eventLog = ref([])
@@ -33,6 +52,7 @@ function makePlaygroundSurface() {
   const confidence = decimalBetween(0.62, 0.93)
   const tone = pick(tones)
   const textVariant = pick(variants)
+  const flashcard = pick(flashcards)
 
   return {
     surfaceId: `playground-${seed.value}`,
@@ -176,8 +196,21 @@ function makePlaygroundSurface() {
       'interactive-row': {
         id: 'interactive-row',
         type: 'Row',
-        children: ['quiz', 'socratic'],
+        children: ['flashcard', 'quiz', 'socratic'],
         props: { gap: 12, alignment: 'start', wrap: true }
+      },
+      flashcard: {
+        id: 'flashcard',
+        type: 'Flashcard',
+        props: {
+          prompt: flashcard.prompt,
+          answer: flashcard.answer,
+          promptLabel: 'Pregunta o concepto',
+          answerLabel: 'Respuesta correcta',
+          initiallyRevealed: false,
+          tone: pick(['base', 'primary', 'secondary', 'accent'])
+        },
+        events: { onFlip: '/api/playground/flashcard' }
       },
       quiz: {
         id: 'quiz',
@@ -287,7 +320,7 @@ function handleA2UIEvent(event) {
               <p class="mt-1 text-base-content/70">{{ entry.eventName }} -> {{ entry.endpoint ?? 'sin endpoint' }}</p>
             </article>
           </div>
-          <p v-else class="mt-3 text-sm text-base-content/60">Interactua con Button, QuizCard o SocraticDialog.</p>
+          <p v-else class="mt-3 text-sm text-base-content/60">Interactua con Flashcard, Button, QuizCard o SocraticDialog.</p>
         </section>
       </aside>
     </main>
