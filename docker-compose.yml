@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  server:
+    build:
+      context: ./src
+      dockerfile: deploy/docker/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ENVIRONMENT=development
+      - SERVER_PORT=8080
+      - JWT_SECRET=dev-jwt-secret
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-placeholder}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-placeholder}
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_DB: sai_learning
+      POSTGRES_USER: sai_user
+      POSTGRES_PASSWORD: sai_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./src/migrations:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
