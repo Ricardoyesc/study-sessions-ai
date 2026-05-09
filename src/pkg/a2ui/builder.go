@@ -4,6 +4,12 @@ import (
 	"sai-server/internal/domain"
 )
 
+type Builder struct{}
+
+func NewBuilder() *Builder {
+	return &Builder{}
+}
+
 func NewText(id, content, variant string) domain.A2UIComponent {
 	return domain.A2UIComponent{
 		ID:   id,
@@ -144,5 +150,23 @@ func DefaultDataModel() domain.A2UIDataModel {
 		HighContrast:  false,
 		ReducedMotion: false,
 		Language:      "es",
+	}
+}
+
+func (b *Builder) BuildCapsuleSurface(id, topic string, components map[string]domain.A2UIComponent, dataModel domain.A2UIDataModel) *domain.A2UISurface {
+	return &domain.A2UISurface{
+		SurfaceID:     id,
+		RootComponent: "root",
+		Components:    components,
+		DataModel:     dataModel,
+	}
+}
+
+func (b *Builder) BuildSocraticSurface(id string, components map[string]domain.A2UIComponent, dataModel domain.A2UIDataModel) *domain.A2UISurface {
+	return &domain.A2UISurface{
+		SurfaceID:     id,
+		RootComponent: "root",
+		Components:    components,
+		DataModel:     dataModel,
 	}
 }

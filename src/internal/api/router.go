@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"sai-server/internal/api/handlers"
+	"sai-server/internal/api/middleware"
 )
 
 func RegisterRoutes(r *gin.Engine, h *handlers.Handlers, jwtSecret string) {
@@ -13,7 +14,7 @@ func RegisterRoutes(r *gin.Engine, h *handlers.Handlers, jwtSecret string) {
 		api.POST("/users/login", h.User.Login)
 
 		auth := api.Group("")
-		auth.Use(func(c *gin.Context) { c.Next() })
+		auth.Use(middleware.AuthMiddleware(jwtSecret))
 		{
 			auth.GET("/users/me", h.User.Me)
 

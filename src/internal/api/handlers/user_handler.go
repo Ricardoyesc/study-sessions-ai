@@ -2,18 +2,18 @@ package handlers
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
+
+	"sai-server/internal/app/user"
 )
 
 type UserHandler struct {
-	jwtSecret string
+	svc *user.Service
 }
 
-func NewUserHandler(jwtSecret string) *UserHandler {
-	return &UserHandler{jwtSecret: jwtSecret}
+func NewUserHandler(svc *user.Service) *UserHandler {
+	return &UserHandler{svc: svc}
 }
 
 func (h *UserHandler) Register(c *gin.Context) {
@@ -26,15 +26,20 @@ func (h *UserHandler) Register(c *gin.Context) {
 		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": "temp-user-id",
-		"exp": time.Now().Add(24 * time.Hour).Unix(),
-	})
-	tokenStr, _ := token.SignedString([]byte(h.jwtSecret))
+	u, token, err := h.svc.Register(c.Request.Context(), req.Email, req.Password)
+	if err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"token": tokenStr,
-		"user":  gin.H{"email": req.Email},
+		"token": token,
+		"user": gin.H{
+			"id":               u.ID,
+			"email":            u.Email,
+			"estimated_theta":  u.EstimatedTheta,
+			"cluster":          u.Cluster,
+		},
 	})
 }
 
@@ -48,18 +53,40 @@ func (h *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": "temp-user-id",
-		"exp": time.Now().Add(24 * time.Hour).Unix(),
-	})
-	tokenStr, _ := token.SignedString([]byte(h.jwtSecret))
+	u, token, err := h.svc.Login(c.Request.Context(), req.Email, req.Password)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
 
-	c.JSON(http.StatusOK, gin.H{"token": tokenStr})
+	c.JSON(http.StatusOK, gin.H{
+		"token": token,
+		"user": gin.H{
+			"id":               u.ID,
+			"email":            u.Email,
+			"estimated_theta":  u.EstimatedTheta,
+			"cluster":          u.Cluster,
+		},
+	})
 }
 
 func (h *UserHandler) Me(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "not authenticated"})
+		return
+	}
+
+	u, err := h.svc.GetUser(c.Request.Context(), userID.(string))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"id":    "temp-user-id",
-		"email": "user@example.com",
+		"id":               u.ID,
+		"email":            u.Email,
+		"estimated_theta":  u.EstimatedTheta,
+		"cluster":          u.Cluster,
 	})
 }

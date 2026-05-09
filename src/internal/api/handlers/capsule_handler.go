@@ -1,21 +1,48 @@
 package handlers
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
 
-type CapsuleHandler struct{}
+	"github.com/gin-gonic/gin"
 
-func NewCapsuleHandler() *CapsuleHandler {
-	return &CapsuleHandler{}
+	"sai-server/internal/app/dualcode"
+)
+
+type CapsuleHandler struct {
+	orch *dualcode.Orchestrator
+}
+
+func NewCapsuleHandler(orch *dualcode.Orchestrator) *CapsuleHandler {
+	return &CapsuleHandler{orch: orch}
 }
 
 func (h *CapsuleHandler) Generate(c *gin.Context) {
-	c.JSON(201, gin.H{"message": "capsule generation started"})
+	var req struct {
+		Topic string `json:"topic" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	capsule, err := h.orch.GenerateCapsule(c.Request.Context(), req.Topic)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"topic":   capsule.Topic,
+		"text":    capsule.Text,
+		"image_url": capsule.ImageURL,
+		"surface": capsule.A2UISurface,
+	})
 }
 
 func (h *CapsuleHandler) Get(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "capsule details"})
+	c.JSON(http.StatusOK, gin.H{"message": "capsule details"})
 }
 
 func (h *CapsuleHandler) ServeAsset(c *gin.Context) {
-	c.JSON(200, gin.H{"message": "asset served"})
+	c.JSON(http.StatusOK, gin.H{"message": "asset served"})
 }
