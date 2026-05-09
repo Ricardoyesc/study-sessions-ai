@@ -32,7 +32,8 @@ type Config struct {
 	TTSProvider  string
 	GeminiAPIKey string
 
-	ImageProvider string
+	ImageProvider    string
+	GeminiImageModel string
 }
 
 func Load() *Config {
@@ -71,7 +72,8 @@ func Load() *Config {
 		TTSProvider:  getEnv("TTS_PROVIDER", "gemini"),
 		GeminiAPIKey: getEnv("GEMINI_API_KEY", ""),
 
-		ImageProvider: getEnv("IMAGE_PROVIDER", "dalle"),
+		ImageProvider:    getEnv("IMAGE_PROVIDER", "gemini"),
+		GeminiImageModel: getEnv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image-preview"),
 	}
 
 	return cfg
