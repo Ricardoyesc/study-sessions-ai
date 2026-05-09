@@ -19,6 +19,7 @@ type Capsule struct {
 	Text       string
 	ImageURL   string
 	ImageAlt   string
+	AudioURL   string
 	A2UISurface *domain.A2UISurface
 }
 

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -133,6 +134,24 @@ func main() {
 }
 
 func seedDemoData(db *gorm.DB) {
+	var userCount int64
+	db.Model(&domain.User{}).Count(&userCount)
+	if userCount == 0 {
+		demoHash, _ := bcrypt.GenerateFromPassword([]byte("demo1234"), bcrypt.DefaultCost)
+		demoUser := domain.User{
+			Email:        "demo@demo.com",
+			PasswordHash: string(demoHash),
+			Cluster:      strPtr("intermediate"),
+		}
+		theta := 0.55
+		demoUser.EstimatedTheta = &theta
+		if err := db.Create(&demoUser).Error; err != nil {
+			slog.Error("failed to seed demo user", "error", err)
+		} else {
+			slog.Info("demo user created", "email", demoUser.Email)
+		}
+	}
+
 	var count int64
 	db.Model(&domain.Concept{}).Count(&count)
 	if count > 0 {

@@ -10,8 +10,8 @@ import (
 )
 
 type Pipeline struct {
-	service    *Service
-	sessions   map[string]*SessionCtx
+	service  *Service
+	sessions map[string]*SessionCtx
 }
 
 func NewPipeline(service *Service) *Pipeline {
@@ -33,8 +33,9 @@ func (p *Pipeline) GetOrCreateCtx(sessionID string) *SessionCtx {
 	}
 
 	sctx := &SessionCtx{
-		Session:      session,
-		CurrentState: State(session.State),
+		Session:           session,
+		CurrentState:      State(session.State),
+		CurrentDifficulty: 0.50,
 	}
 	p.sessions[sessionID] = sctx
 	return sctx
@@ -46,7 +47,7 @@ func (p *Pipeline) NextItem(sessionID, topic string) (*PipelineResult, error) {
 		return nil, fmt.Errorf("session not found: %s", sessionID)
 	}
 
-	slog.Info("pipeline next item", "sessionID", sessionID, "state", ctx.CurrentState)
+	slog.Info("pipeline next item", "sessionID", sessionID, "state", ctx.CurrentState, "difficulty", ctx.CurrentDifficulty, "progress", ctx.Progress)
 
 	switch ctx.CurrentState {
 	case StateCapsule, StateColdStart:
@@ -56,7 +57,7 @@ func (p *Pipeline) NextItem(sessionID, topic string) (*PipelineResult, error) {
 	case StateRemediation:
 		return p.generateRemediation(ctx, topic)
 	case StateCompleted:
-		return &PipelineResult{State: StateCompleted, Message: "Session complete"}, nil
+		return &PipelineResult{State: StateCompleted, Message: "Sesión completada. ¡Buen trabajo!"}, nil
 	default:
 		ctx.CurrentState = StateCapsule
 		return p.generateCapsule(ctx, topic)
@@ -71,19 +72,26 @@ func (p *Pipeline) EvaluateAnswer(sessionID string, selectedIndex int) (*Pipelin
 
 	eval := p.service.quizEngine.EvaluateAnswer(ctx.CurrentQuestion, selectedIndex)
 
+	wasCorrect := eval.IsCorrect
+	updateAdaptiveDifficulty(ctx, wasCorrect)
+
 	p.service.LogInteraction(context.Background(), sessionID, "quiz_answer", map[string]interface{}{
-		"question_id":    ctx.CurrentQuestion.ID,
-		"selected_index": selectedIndex,
-		"correct_index":  ctx.CurrentQuestion.CorrectIndex,
-		"topic":          ctx.CurrentQuestion.Topic,
-	}, &eval.IsCorrect, nil)
+		"question_id":      ctx.CurrentQuestion.ID,
+		"selected_index":   selectedIndex,
+		"correct_index":    ctx.CurrentQuestion.CorrectIndex,
+		"topic":            ctx.CurrentQuestion.Topic,
+		"difficulty":       ctx.CurrentDifficulty,
+		"correct_count":    ctx.CorrectCount,
+		"incorrect_count":  ctx.IncorrectCount,
+		"total_items":      ctx.TotalItems,
+	}, &wasCorrect, nil)
 
 	if eval.IsCorrect {
 		ctx.CurrentState = StateCapsule
 		ctx.CurrentQuestion = nil
 		return &PipelineResult{
 			State:         StateCapsule,
-			Message:       "Correct! Moving to next topic.",
+			Message:       fmt.Sprintf("¡Correcto! (%d/%d aciertos)", ctx.CorrectCount, ctx.TotalItems),
 			IsCorrect:     true,
 			CorrectAnswer: eval.CorrectAnswer,
 			Feedback:      eval.Feedback,
@@ -93,7 +101,7 @@ func (p *Pipeline) EvaluateAnswer(sessionID string, selectedIndex int) (*Pipelin
 	ctx.CurrentState = StateRemediation
 	return &PipelineResult{
 		State:         StateRemediation,
-		Message:       "Incorrect. Let's review this concept.",
+		Message:       fmt.Sprintf("Incorrecto. Revisemos este concepto. (%d/%d aciertos)", ctx.CorrectCount, ctx.TotalItems),
 		IsCorrect:     false,
 		CorrectAnswer: eval.CorrectAnswer,
 		Feedback:      eval.Feedback,
@@ -115,7 +123,7 @@ func (p *Pipeline) ProcessRemediationResponse(sessionID, studentResponse string)
 
 	return &PipelineResult{
 		State:   StateCapsule,
-		Message: "Reflection received. Let's continue.",
+		Message: "Reflexión recibida. Continuemos con el siguiente tema.",
 	}, nil
 }
 
@@ -137,17 +145,12 @@ func (p *Pipeline) generateCapsule(ctx *SessionCtx, topic string) (*PipelineResu
 		State:       StateCapsule,
 		Topic:       capsule.Topic,
 		A2UISurface: capsule.A2UISurface,
-		Message:     fmt.Sprintf("Capsule generated for: %s", topic),
+		Message:     fmt.Sprintf("Cápsula generada: %s (dificultad: %.0f%%)", topic, ctx.CurrentDifficulty*100),
 	}, nil
 }
 
 func (p *Pipeline) generateQuiz(ctx *SessionCtx, topic string) (*PipelineResult, error) {
-	difficulty := 0.5
-	if ctx.Session.TargetSuccessRate > 0 {
-		difficulty = 1.0 - ctx.Session.TargetSuccessRate
-	}
-
-	question, err := p.service.quizEngine.GenerateQuestion(context.Background(), topic, difficulty)
+	question, err := p.service.quizEngine.GenerateQuestion(context.Background(), topic, ctx.CurrentDifficulty)
 	if err != nil {
 		return nil, err
 	}
@@ -158,8 +161,16 @@ func (p *Pipeline) generateQuiz(ctx *SessionCtx, topic string) (*PipelineResult,
 		"quiz-root": {
 			ID:       "quiz-root",
 			Type:     "Column",
-			Children: []string{"quiz-card"},
+			Children: []string{"quiz-progress", "quiz-card"},
 			Props:    map[string]interface{}{"gap": 16, "padding": 24},
+		},
+		"quiz-progress": {
+			ID:   "quiz-progress",
+			Type: "ProgressBar",
+			Props: map[string]interface{}{
+				"value": ctx.Progress,
+				"max":   1.0,
+			},
 		},
 		"quiz-card": {
 			ID:   "quiz-card",
@@ -186,7 +197,7 @@ func (p *Pipeline) generateQuiz(ctx *SessionCtx, topic string) (*PipelineResult,
 		State:       StateQuiz,
 		Question:    question,
 		A2UISurface: surface,
-		Message:     fmt.Sprintf("Quiz question for: %s", topic),
+		Message:     fmt.Sprintf("Pregunta sobre: %s (dificultad: %.0f%%)", topic, ctx.CurrentDifficulty*100),
 	}, nil
 }
 
@@ -194,7 +205,7 @@ func (p *Pipeline) generateRemediation(ctx *SessionCtx, topic string) (*Pipeline
 	wrongAnswer := ""
 	correctAnswer := ""
 	if ctx.CurrentQuestion != nil {
-		wrongAnswer = fmt.Sprintf("Option %d", ctx.CurrentQuestion.CorrectIndex+1)
+		wrongAnswer = ctx.CurrentQuestion.Options[ctx.CurrentQuestion.CorrectIndex]
 		correctAnswer = ctx.CurrentQuestion.Options[ctx.CurrentQuestion.CorrectIndex]
 	}
 
@@ -208,7 +219,7 @@ func (p *Pipeline) generateRemediation(ctx *SessionCtx, topic string) (*Pipeline
 	return &PipelineResult{
 		State:       StateRemediation,
 		A2UISurface: remediation.A2UISurface,
-		Message:     "Remediation generated",
+		Message:     "Revisemos este concepto con más detalle.",
 	}, nil
 }
 

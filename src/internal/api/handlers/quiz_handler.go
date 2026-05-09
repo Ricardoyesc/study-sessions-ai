@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -21,7 +20,7 @@ func (h *QuizHandler) Answer(c *gin.Context) {
 	sessionID := c.Param("id")
 
 	var req struct {
-		SelectedIndex int `json:"selected_index" binding:"required"`
+		SelectedIndex int `json:"selected_index"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -33,8 +32,6 @@ func (h *QuizHandler) Answer(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	_ = strconv.Itoa(req.SelectedIndex) // can be used for logging
 
 	c.JSON(http.StatusOK, gin.H{
 		"state":          result.State,

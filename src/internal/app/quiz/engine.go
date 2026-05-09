@@ -2,6 +2,7 @@ package quiz
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -9,13 +10,19 @@ import (
 	"sai-server/internal/port"
 )
 
+type llmQuizResponse struct {
+	Question string   `json:"question"`
+	Options  []string `json:"options"`
+	Correct  int      `json:"correct"`
+}
+
 func (e *Engine) GenerateQuestion(ctx context.Context, topic string, difficulty float64) (*Question, error) {
 	slog.Info("generating quiz question", "topic", topic, "difficulty", difficulty)
 
 	resp, err := e.llm.GenerateCompletion(ctx, buildQuizPrompt(topic, difficulty), &port.LLMOptions{
 		MaxTokens:   300,
 		Temperature: 0.8,
-		SystemPrompt: "Eres un generador de preguntas educativas. Responde SOLO en el formato JSON especificado, sin texto adicional.",
+		SystemPrompt: "Eres un generador de preguntas educativas. Responde SOLO en el formato JSON especificado, sin markdown ni texto adicional.",
 	})
 	if err != nil {
 		slog.Warn("quiz generation failed, using fallback", "error", err)
@@ -64,12 +71,33 @@ Donde "correct" es el índice (0-3) de la respuesta correcta.`, diffLabel, topic
 }
 
 func parseQuestion(raw, topic string) *Question {
+	cleaned := strings.TrimSpace(raw)
+	cleaned = strings.TrimPrefix(cleaned, "```json")
+	cleaned = strings.TrimPrefix(cleaned, "```")
+	cleaned = strings.TrimSuffix(cleaned, "```")
+	cleaned = strings.TrimSpace(cleaned)
+
+	var parsed llmQuizResponse
+	if err := json.Unmarshal([]byte(cleaned), &parsed); err != nil {
+		slog.Warn("failed to parse quiz JSON, using fallback", "raw", raw[:min(100, len(raw))], "error", err)
+		return fallbackQuestion(topic)
+	}
+
+	if parsed.Question == "" || len(parsed.Options) < 2 {
+		slog.Warn("quiz JSON incomplete, using fallback", "question", parsed.Question, "options", len(parsed.Options))
+		return fallbackQuestion(topic)
+	}
+
+	if parsed.Correct < 0 || parsed.Correct >= len(parsed.Options) {
+		parsed.Correct = 0
+	}
+
 	return &Question{
 		ID:           fmt.Sprintf("q-%s-%d", strings.ReplaceAll(topic, " ", "-"), len(topic)),
 		Topic:        topic,
-		Question:     "¿Cuál es el concepto principal de " + topic + "?",
-		Options:      []string{"A) Opción 1", "B) Opción 2", "C) Opción 3", "D) Opción 4"},
-		CorrectIndex: 0,
+		Question:     parsed.Question,
+		Options:      parsed.Options,
+		CorrectIndex: parsed.Correct,
 		Difficulty:   0.5,
 	}
 }
@@ -79,7 +107,7 @@ func fallbackQuestion(topic string) *Question {
 		ID:           fmt.Sprintf("q-fallback-%s", topic),
 		Topic:        topic,
 		Question:     fmt.Sprintf("¿Cuál es el concepto principal de %s?", topic),
-		Options:      []string{"A) Primera opción", "B) Segunda opción", "C) Tercera opción", "D) Cuarta opción"},
+		Options:      []string{"A) La definición básica", "B) Su aplicación práctica", "C) Su historia y origen", "D) Su relación con otros conceptos"},
 		CorrectIndex: 0,
 		Difficulty:   0.5,
 	}

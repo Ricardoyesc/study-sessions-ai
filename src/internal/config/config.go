@@ -73,7 +73,7 @@ func Load() *Config {
 		GeminiAPIKey: getEnv("GEMINI_API_KEY", ""),
 
 		ImageProvider:    getEnv("IMAGE_PROVIDER", "gemini"),
-		GeminiImageModel: getEnv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image-preview"),
+		GeminiImageModel: getEnv("GEMINI_IMAGE_MODEL", "gemini-2.0-flash-exp-image-generation"),
 	}
 
 	return cfg

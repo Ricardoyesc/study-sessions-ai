@@ -2,8 +2,8 @@
 import ThemeSelector from '~/components/layout/ThemeSelector.vue'
 import { useTheme } from '~/composables/useTheme'
 
-const email = ref('sofia.martinez@example.com')
-const password = ref('demo-password')
+const email = ref('demo@demo.com')
+const password = ref('demo1234')
 const formError = ref(null)
 
 const { isAuthenticated, loading, errorMessage, login } = useAuth()

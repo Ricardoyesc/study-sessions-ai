@@ -2,6 +2,7 @@ package dualcode
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log/slog"
 
@@ -39,34 +40,75 @@ func (o *Orchestrator) GenerateCapsule(ctx context.Context, topic string) (*Caps
 	if imgResp != nil && len(imgResp.ImageURLs) > 0 {
 		imageURL = imgResp.ImageURLs[0]
 		imageAlt = fmt.Sprintf("Diagrama sobre %s", topic)
-	} else {
-		imageURL = ""
-		imageAlt = ""
+	}
+
+	var audioURL string
+	audioText := fmt.Sprintf("Lección sobre %s. %s", topic, extractPlainText(textResp.Content))
+	if len(audioText) > 1000 {
+		audioText = audioText[:1000]
+	}
+	audioResp, audioErr := o.tts.SynthesizeSpeech(ctx, audioText, &port.TTSOptions{
+		Voice: "nova",
+		Speed: 1.0,
+	})
+	if audioErr != nil {
+		slog.Warn("audio generation failed", "error", audioErr)
+	}
+	if audioResp != nil && len(audioResp.AudioData) > 0 {
+		audioURL = "data:audio/mp3;base64," + base64.StdEncoding.EncodeToString(audioResp.AudioData)
+	}
+
+	children := []string{"text-content", "image-diagram"}
+	if audioURL != "" {
+		children = append(children, "audio-player")
 	}
 
 	components := map[string]domain.A2UIComponent{
-		"root":            a2ui.NewColumn("root", []string{"header", "body"}, nil),
-		"header":          a2ui.NewRow("header", []string{"title"}, map[string]interface{}{"alignment": "center"}),
-		"title":           a2ui.NewText("title", topic, "h2"),
-		"body":            a2ui.NewCard("body", []string{"text-content", "image-diagram"}, nil),
-		"text-content":    a2ui.NewRichText("text-content", textResp.Content),
+		"root":         a2ui.NewColumn("root", []string{"header", "progress", "body"}, map[string]interface{}{"gap": 16, "padding": 24}),
+		"header":       a2ui.NewRow("header", []string{"title"}, map[string]interface{}{"alignment": "center"}),
+		"title":        a2ui.NewText("title", topic, "h2"),
+		"progress":     a2ui.NewProgressBar("progress", 0.25, 1.0),
+		"body":         a2ui.NewCard("body", children, map[string]interface{}{"elevation": 2}),
+		"text-content": a2ui.NewRichText("text-content", textResp.Content),
 	}
 
 	if imageURL != "" {
 		components["image-diagram"] = a2ui.NewImage("image-diagram", imageURL, imageAlt)
 	} else {
-		components["image-diagram"] = a2ui.NewText("image-diagram", "[Imagen no disponible — configura GEMINI_API_KEY]", "caption")
+		components["image-diagram"] = a2ui.NewText("image-diagram", "[Imagen no disponible — configura GEMINI_API_KEY y OPENAI_API_KEY]", "caption")
 	}
 
-	surface := o.builder.BuildCapsuleSurface(fmt.Sprintf("capsule-%s", topic), topic, components, a2ui.DefaultDataModel())
+	if audioURL != "" {
+		components["audio-player"] = a2ui.NewAudioPlayer("audio-player", audioURL)
+	}
+
+	dm := a2ui.DefaultDataModel()
+	dm.Language = "es"
+
+	surface := o.builder.BuildCapsuleSurface(fmt.Sprintf("capsule-%s", topic), topic, components, dm)
 
 	return &Capsule{
 		Topic:       topic,
 		Text:        textResp.Content,
 		ImageURL:    imageURL,
 		ImageAlt:    imageAlt,
+		AudioURL:    audioURL,
 		A2UISurface: surface,
 	}, nil
+}
+
+func extractPlainText(md string) string {
+	result := ""
+	for _, c := range md {
+		if c == '#' || c == '*' || c == '-' || c == '_' || c == '`' {
+			continue
+		}
+		result += string(c)
+	}
+	if len(result) > 500 {
+		result = result[:500]
+	}
+	return result
 }
 
 func buildTextPrompt(topic string) string {

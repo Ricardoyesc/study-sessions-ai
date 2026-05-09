@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"math"
 	"time"
 
 	"gorm.io/gorm"
@@ -15,25 +16,30 @@ import (
 type State string
 
 const (
-	StateColdStart  State = "coldstart"
-	StateCapsule    State = "capsule"
-	StateQuiz       State = "quiz"
+	StateColdStart   State = "coldstart"
+	StateCapsule     State = "capsule"
+	StateQuiz        State = "quiz"
 	StateRemediation State = "remediation"
-	StateCompleted  State = "completed"
+	StateCompleted   State = "completed"
 )
 
 type SessionCtx struct {
-	Session      *domain.Session
-	CurrentState State
-	CurrentQuestion *quiz.Question
+	Session            *domain.Session
+	CurrentState       State
+	CurrentQuestion    *quiz.Question
 	CurrentRemediation *socratic.Remediation
+	CorrectCount       int
+	IncorrectCount     int
+	TotalItems         int
+	CurrentDifficulty  float64
+	Progress           float64
 }
 
 type Service struct {
-	db          *gorm.DB
-	dualCode    *dualcode.Orchestrator
-	quizEngine  *quiz.Engine
-	socratic    *socratic.Remediator
+	db        *gorm.DB
+	dualCode  *dualcode.Orchestrator
+	quizEngine *quiz.Engine
+	socratic   *socratic.Remediator
 }
 
 func NewService(db *gorm.DB, dualCode *dualcode.Orchestrator, quizEngine *quiz.Engine, socratic *socratic.Remediator) *Service {
@@ -78,4 +84,22 @@ func (s *Service) LogInteraction(ctx context.Context, sessionID, itype string, p
 	}
 
 	return s.db.Create(&interaction).Error
+}
+
+func updateAdaptiveDifficulty(ctx *SessionCtx, wasCorrect bool) {
+	ctx.TotalItems++
+
+	if wasCorrect {
+		ctx.CorrectCount++
+		ctx.CurrentDifficulty = math.Min(ctx.CurrentDifficulty+0.08, 0.95)
+	} else {
+		ctx.IncorrectCount++
+		ctx.CurrentDifficulty = math.Max(ctx.CurrentDifficulty-0.12, 0.10)
+	}
+
+	ctx.Progress = float64(ctx.TotalItems) / float64(ctx.TotalItems+3)
+
+	if ctx.TotalItems >= 8 {
+		ctx.CurrentState = StateCompleted
+	}
 }
