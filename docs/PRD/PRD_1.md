@@ -3,7 +3,7 @@
 # PRD 1 of 4 — Capsule (Controlled Generative UI)
 
 **Branch:** `feat/capsule-controlled`
-**Owner:** 1 persona (la más cómoda con React/Next.js del equipo)
+**Owner:** 1 persona (la más cómoda con Vue/Nuxt + Go del equipo)
 **Time budget:** 4 horas wall-clock, dividido en 4 bloques de 1 hora
 **Dependencies:** ninguna. Esta es la branch que arranca primero porque las otras 3 dependen del scaffolding que esta deja en main.
 
@@ -20,13 +20,13 @@ Construir el primer momento del demo: una **cápsula de estudio multimodal** que
 ## 2. Scope (qué SÍ y qué NO)
 
 **SÍ:**
-- Scaffold del proyecto Next.js 15 (App Router) que será la base para las otras 3 branches.
-- Endpoint `/api/agent` que recibe `{topic: string}` y devuelve `{component: "StudyCapsule", props: {...}}`.
-- Componente `<StudyCapsule />` con diseño production-grade (Tailwind + shadcn/ui).
+- Scaffold de **dos repos hermanos**: `sai-web/` (Nuxt 3 + Vue 3 + TypeScript) y `sai-server/` (Go monolito + Gin) que serán la base para las otras 3 branches.
+- Endpoint `POST /api/capsules/generate` (Go handler) que recibe `{topic, sessionId}` y devuelve `{kind: "controlled", component: "StudyCapsule", props: {...}, modalities: [...]}`.
+- Componente Vue `<StudyCapsule.vue />` con diseño production-grade (Tailwind via `@nuxtjs/tailwindcss` + `shadcn-vue`).
 - Una sola cápsula hardcoded: tema "Doble Rendija" (Quantum Mechanics).
-- Imagen pre-generada con DALL-E o Gemini, guardada en `/public/capsule-doble-rendija.png`.
-- Audio pre-generado con ElevenLabs free tier o Web Speech API en vivo, guardado en `/public/capsule-doble-rendija.mp3`.
-- Estado global mínimo con Zustand (un solo store) que las otras 3 branches van a importar.
+- Imagen pre-generada con DALL·E 3 o Gemini, guardada en `sai-server/assets/capsule-doble-rendija.png`.
+- Audio pre-generado con Gemini TTS o Web Speech API en vivo, guardada en `sai-server/assets/capsule-doble-rendija.mp3`.
+- Estado global mínimo con Pinia (un solo store en `sai-web/stores/demo.ts`) que las otras 3 branches van a importar.
 
 **NO:**
 - Persistencia (sin localStorage, sin DB).
@@ -38,108 +38,202 @@ Construir el primer momento del demo: una **cápsula de estudio multimodal** que
 
 ---
 
-## 3. Tech stack exacto
+## 3. Tech stack exacto (Nuxt 3 frontend + Go backend, alineado con ARCHITECTURE §6 §7)
+
+### Frontend — `sai-web/`
 
 | Capa | Tecnología | Versión | Razón |
 |---|---|---|---|
-| Framework | Next.js | 15.x | App Router, Vercel deploy en 1 comando |
+| Framework | Nuxt 3 | 3.x | SSR/SSG opcional, file-based routing, alineado con arch §7 |
 | Lenguaje | TypeScript | 5.x | Strict mode |
-| LLM SDK | `@anthropic-ai/sdk` | latest | Claude Sonnet 4.5 vía API key directo. Sin Vercel AI SDK para evitar bugs de versión. |
-| LLM modelo | `claude-sonnet-4-5` | — | Más barato que Opus, suficiente para "elegir componente y props" |
-| Estilos | Tailwind CSS | 4.x | Ya viene con `create-next-app` |
-| Componentes | shadcn/ui | latest | `Card`, `Button`, `Skeleton` |
-| Estado | Zustand | 5.x | Un solo store global |
-| Iconos | `lucide-react` | latest | |
-| Audio | HTML5 `<audio>` nativo | — | No reproductor custom |
-| Imagen pre-gen | DALL-E 3 vía playground o Gemini Image | — | UNA imagen, fuera de runtime |
+| UI Layer | Vue 3 (Composition API + `<script setup>`) | 3.x | SFC + composables |
+| Estilos | Tailwind CSS | 3.x via `@nuxtjs/tailwindcss` | Tokens consistentes |
+| Componentes | shadcn-vue | latest | `Card`, `Button`, `Skeleton`, `Badge` |
+| Estado | Pinia | 2.x | Store oficial de Nuxt 3 |
+| Iconos | `lucide-vue-next` | latest | |
+| Audio | HTML5 `<audio>` nativo | — | Sin player custom |
 
-**No usar:** Vercel AI SDK, CopilotKit, A2UI library, LangChain, LangGraph, Postgres, Redis, Docker. Todo eso suma minutos de setup que no tienen.
+### Backend — `sai-server/` (Go monolito)
+
+| Capa | Tecnología | Versión | Razón |
+|---|---|---|---|
+| Lenguaje | Go | 1.22+ | Arch §1.2 |
+| HTTP | Gin | latest | Router + middleware ligero |
+| ORM | GORM | latest | Postgres prod / SQLite dev (arch §10) |
+| LLM SDK | `github.com/sashabaranov/go-openai` | latest | GPT-4o (arch §1.2) — **no** Anthropic en arch oficial |
+| LLM modelo | `gpt-4o` | — | Arch §8.2 ConfigMap |
+| Imágenes | DALL·E 3 vía OpenAI client | — | Arch §1.2 |
+| Audio TTS | Google Gemini TTS | v1 | Arch §1.2 (en runtime o pre-gen para PoC) |
+| Storage assets | filesystem local (dev) / MinIO (prod) | — | Arch §1.2 |
+| Logging | `log/slog` | stdlib | |
+
+### Imagen / audio pre-generados
+Para PoC ambos quedan en `sai-server/assets/` (servidos vía `GET /api/assets/{type}/{filename}`, arch §2.1). Se generan una vez con scripts en `sai-server/scripts/gen-assets.go` o playground externo y se commitean.
+
+**No usar:** Next.js, CopilotKit, A2UI library externa, LangChain, LangGraph, Vercel AI SDK, Anthropic SDK. **Postgres/Redis/Docker quedan opcionales en PoC** (SQLite + sin cache + `go run` directo).
 
 ---
 
 ## 4. Variables de entorno
 
-`.env.local`:
+**`sai-server/.env`** (cargado vía `godotenv` o export shell):
 ```
-ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
+GEMINI_API_KEY=...           # opcional, solo si TTS en runtime
+PORT=8080
+ASSETS_DIR=./assets
 ```
 
-Eso es todo. Sin Postgres, sin Redis, sin nada más en la branch 1.
+**`sai-web/.env`**:
+```
+NUXT_PUBLIC_API_BASE=http://localhost:8080
+```
+
+Eso es todo. Sin Postgres, sin Redis, sin nada más en la branch 1. SQLite/in-memory OK si hace falta state.
 
 ---
 
 ## 5. Estructura de archivos a crear
 
+### `sai-web/` (Nuxt 3)
+
 ```
-study-sessions-ai/
-├── app/
-│   ├── layout.tsx                    # Layout raíz, fonts, metadata
-│   ├── page.tsx                      # Landing del demo, llama a <DemoFlow />
-│   ├── globals.css                   # Tailwind base + variables de tema
-│   └── api/
-│       └── capsules/
-│           └── generate/
-│               └── route.ts          # POST /api/capsules/generate (arch §2.1)
+sai-web/
+├── app.vue                           # Root, layout + <NuxtPage />
+├── pages/
+│   └── index.vue                     # Landing del demo, monta <DemoFlow />
 ├── components/
-│   ├── DemoFlow.tsx                  # Orquestador del demo (placeholder para branches 2 y 3)
-│   ├── StudyCapsule.tsx              # ⭐ El componente controlled
-│   └── ui/                           # shadcn (card, button, skeleton)
-├── lib/
-│   ├── anthropic.ts                  # Cliente Claude singleton
-│   ├── store.ts                      # Zustand store compartido
-│   └── prompts/
-│       └── capsule.ts                # System prompt para la cápsula
-├── public/
+│   ├── DemoFlow.vue                  # Orquestador (placeholder para branches 2 y 3)
+│   ├── StudyCapsule.vue              # ⭐ Componente controlled
+│   └── ui/                           # shadcn-vue (Card, Button, Skeleton, Badge)
+├── stores/
+│   └── demo.ts                       # Pinia store compartido
+├── types/
+│   └── genui.ts                      # Mirror de structs Go (GenUIResponse union)
+├── composables/
+│   └── useApi.ts                     # `$fetch` wrapper, base = NUXT_PUBLIC_API_BASE
+├── assets/css/tailwind.css
+├── nuxt.config.ts
+├── tailwind.config.ts
+├── tsconfig.json
+├── package.json
+└── .env
+```
+
+### `sai-server/` (Go + Gin)
+
+```
+sai-server/
+├── cmd/
+│   └── server/
+│       └── main.go                   # Bootstrap Gin, registra rutas
+├── internal/
+│   ├── handlers/
+│   │   └── capsules.go               # POST /api/capsules/generate (arch §2.1)
+│   ├── llm/
+│   │   └── openai.go                 # Cliente go-openai singleton
+│   ├── prompts/
+│   │   └── capsule.go                # System prompt cápsula
+│   ├── types/
+│   │   └── genui.go                  # GenUIResponse, CapsuleProps, Modality
+│   └── assets/
+│       └── handler.go                # GET /api/assets/:type/:filename
+├── assets/
 │   ├── capsule-doble-rendija.png     # Pre-generada
 │   └── capsule-doble-rendija.mp3     # Pre-generada
-├── package.json
-├── tsconfig.json
-├── tailwind.config.ts
-├── next.config.ts
-└── .env.local
+├── scripts/
+│   └── gen-assets.go                 # One-off generator
+├── go.mod
+├── go.sum
+└── .env
 ```
 
 ---
 
 ## 6. Contratos exactos (las 3 personas siguientes dependen de esto)
 
-### 6.1 Tipo compartido en `lib/store.ts`
+### 6.1 Tipos compartidos
+
+**Backend Go canonical** — `sai-server/internal/types/genui.go`:
+
+```go
+package types
+
+type GenUIResponse struct {
+    Kind       string         `json:"kind"` // "controlled" | "declarative" | "open"
+    Component  string         `json:"component,omitempty"`
+    CapsuleID  string         `json:"capsuleId,omitempty"`
+    Topic      string         `json:"topic,omitempty"`
+    Modalities []Modality     `json:"modalities,omitempty"`
+    Props      *CapsuleProps  `json:"props,omitempty"`
+    Surface    *A2UISurface   `json:"surface,omitempty"` // Branch 2 lo llena
+    HTML       string         `json:"html,omitempty"`    // Branch 3 lo llena
+}
+
+type CapsuleProps struct {
+    Topic                string `json:"topic"`
+    Title                string `json:"title"`               // max 60 chars
+    Body                 string `json:"body"`                // markdown OK, max 400 chars
+    ImageURL             string `json:"imageUrl"`
+    AudioURL             string `json:"audioUrl"`
+    EstimatedReadTimeSec int    `json:"estimatedReadTimeSec"`
+}
+
+// Dual coding (ARCHITECTURE §4.3)
+type Modality struct {
+    Type     string                 `json:"type"`    // "text"|"audio"|"image"|"video"
+    Content  string                 `json:"content"` // texto plano o URL del asset
+    Metadata map[string]interface{} `json:"metadata,omitempty"`
+}
+```
+
+**Frontend TS mirror** — `sai-web/types/genui.ts`:
 
 ```typescript
 export type GenUIResponse =
   | { kind: "controlled"; component: "StudyCapsule"; capsuleId: string; topic: string; modalities: Modality[]; props: CapsuleProps }
-  | { kind: "declarative"; surface: A2UISurface }   // Branch 2 lo llena (ver §3.1 ARCHITECTURE)
-  | { kind: "open"; html: string };                  // Branch 3 lo llena
+  | { kind: "declarative"; surface: A2UISurface }   // Branch 2
+  | { kind: "open"; html: string };                  // Branch 3
 
 export type CapsuleProps = {
   topic: string;
   title: string;
-  body: string;             // Markdown OK, max 400 chars
+  body: string;
   imageUrl: string;
   audioUrl: string;
   estimatedReadTimeSec: number;
 };
 
-// Dual coding (ARCHITECTURE §4.3 — DualCapsule.Modalities)
 export type Modality = {
   type: "text" | "audio" | "image" | "video";
-  content: string;          // texto plano o URL del asset
+  content: string;
   metadata?: Record<string, unknown>;
 };
 
 export type DemoStep = "capsule" | "quiz" | "remediation" | "done";
+```
 
-interface DemoStore {
-  step: DemoStep;
-  capsule: CapsuleProps | null;
-  setStep: (s: DemoStep) => void;
-  setCapsule: (c: CapsuleProps) => void;
-}
+**Pinia store** — `sai-web/stores/demo.ts`:
+
+```typescript
+import { defineStore } from "pinia";
+import type { CapsuleProps, DemoStep } from "~/types/genui";
+
+export const useDemoStore = defineStore("demo", {
+  state: () => ({
+    step: "capsule" as DemoStep,
+    capsule: null as CapsuleProps | null,
+  }),
+  actions: {
+    setStep(s: DemoStep) { this.step = s; },
+    setCapsule(c: CapsuleProps) { this.capsule = c; },
+  },
+});
 ```
 
 ### 6.2 Endpoint `POST /api/capsules/generate`
 
-> Ruta alineada con ARCHITECTURE.md §2.1. El backend Go futuro expone exactamente este path. Para la PoC en Next.js implementamos el handler en `app/api/capsules/generate/route.ts`. Branches 2 y 3 usan rutas hermanas (ver sus PRDs).
+> Ruta alineada con ARCHITECTURE.md §2.1. Handler Go en `sai-server/internal/handlers/capsules.go`, registrado vía `r.POST("/api/capsules/generate", handlers.GenerateCapsule)` en `cmd/server/main.go`. Frontend Nuxt llama vía `$fetch` contra `NUXT_PUBLIC_API_BASE`. Branches 2 y 3 agregan handlers hermanos.
 
 **Request:**
 ```json
@@ -175,12 +269,14 @@ interface DemoStore {
 
 ---
 
-## 7. System prompt exacto para Claude (cápsula)
+## 7. System prompt exacto para LLM (cápsula)
 
-`lib/prompts/capsule.ts`:
+`sai-server/internal/prompts/capsule.go`:
 
-```typescript
-export const CAPSULE_SYSTEM_PROMPT = `You are an adaptive study agent. Your job is to choose a UI component and fill it with educational content.
+```go
+package prompts
+
+const CapsuleSystemPrompt = `You are an adaptive study agent. Your job is to choose a UI component and fill it with educational content.
 
 For this request, you MUST:
 1. Choose component "StudyCapsule" (controlled UI).
@@ -192,7 +288,7 @@ Constraints:
 - body: 200-400 chars, markdown allowed, conversational, second person ("imagina que..."), Spanish.
 - estimatedReadTimeSec: realistic estimate based on body length, ~3 chars/second.
 
-Topic: "${"{topic}"}"
+Topic: "%s"
 
 Respond ONLY with valid JSON matching this shape:
 {
@@ -201,10 +297,10 @@ Respond ONLY with valid JSON matching this shape:
   "estimatedReadTimeSec": number
 }
 
-No prose, no markdown fences, no explanations. JSON only.`;
+No prose, no markdown fences, no explanations. JSON only.`
 ```
 
-El handler en `route.ts` mete los `imageUrl`, `audioUrl`, `topic` después porque son hardcoded.
+El handler Go (`capsules.go`) inyecta `imageUrl`, `audioUrl`, `topic` después porque son hardcoded. Si la respuesta del LLM trae fences markdown, hacer strip antes de `json.Unmarshal`.
 
 ---
 
@@ -216,8 +312,8 @@ El handler en `route.ts` mete los `imageUrl`, `audioUrl`, `topic` después porqu
 - Título en h2, 24px, font-semibold.
 - Body en prose, 16px, leading-relaxed, color foreground/80.
 - Footer: botón ghost "Escuchar" (lucide `Volume2`), tiempo estimado a la derecha "~45s".
-- Botón primary "Continuar al quiz" abajo, fullwidth — **dispara `setStep("quiz")` en el Zustand**.
-- Skeleton loader mientras `/api/agent` resuelve.
+- Botón primary "Continuar al quiz" abajo, fullwidth — **dispara `setStep("quiz")` en el Pinia store**.
+- Skeleton loader mientras `POST /api/capsules/generate` resuelve.
 
 Inspiración: el card de Linear que muestra un issue. Limpio, denso, no decorativo.
 
@@ -225,49 +321,49 @@ Inspiración: el card de Linear que muestra un issue. Limpio, denso, no decorati
 
 ## 9. Plan minuto a minuto
 
-**Hora 1 — Scaffold (00:00–01:00)**
-- `npx create-next-app@latest study-sessions-ai --typescript --tailwind --app --src-dir=false --import-alias="@/*"`
-- `npm install @anthropic-ai/sdk zustand lucide-react`
-- `npx shadcn@latest init` → `npx shadcn@latest add card button skeleton badge`
-- Crear `lib/anthropic.ts`, `lib/store.ts` con los tipos del §6.1.
+**Hora 1 — Scaffold dual repo (00:00–01:00)**
+- Frontend: `npx nuxi@latest init sai-web` → `cd sai-web` → `npm i` → `npm i -D @nuxtjs/tailwindcss @pinia/nuxt` → `npm i lucide-vue-next` → `npx shadcn-vue@latest init` → add `card button skeleton badge`.
+- Backend: `mkdir sai-server && cd sai-server && go mod init github.com/<org>/sai-server` → `go get github.com/gin-gonic/gin github.com/sashabaranov/go-openai github.com/joho/godotenv`.
+- Crear `sai-server/internal/types/genui.go` y `sai-web/types/genui.ts` con los tipos del §6.1.
 - Push inicial a `main`. **Las branches 2, 3, 4 deben hacer rebase sobre este commit antes de empezar.**
 
-**Hora 2 — Endpoint y prompt (01:00–02:00)**
-- Crear `app/api/capsules/generate/route.ts` (handler dedicado, ruta espeja arch §2.1). Branches 2/3 crean rutas hermanas (`/api/sessions/[id]/quiz/answer`, `/api/sessions/[id]/socratic/response`) — cero conflictos de merge.
-- Crear `lib/prompts/capsule.ts`.
-- Probar con `curl -X POST localhost:3000/api/capsules/generate -d '{"topic":"doble-rendija","sessionId":"demo"}' -H "Content-Type: application/json"` → debe devolver JSON válido con `modalities.length >= 2`.
-- Si Claude devuelve markdown fences, hacer strip antes de `JSON.parse`.
+**Hora 2 — Endpoint Go y prompt (01:00–02:00)**
+- Crear `sai-server/cmd/server/main.go` con bootstrap Gin + CORS para `localhost:3000`.
+- Crear `sai-server/internal/handlers/capsules.go` (handler `POST /api/capsules/generate`, ruta espeja arch §2.1). Branches 2/3 crean handlers hermanos (`/api/sessions/:id/next`, `/api/sessions/:id/quiz/answer`, `/api/sessions/:id/socratic/response`) — cero conflictos de merge.
+- Crear `sai-server/internal/prompts/capsule.go`.
+- `go run ./cmd/server` → probar con `curl -X POST localhost:8080/api/capsules/generate -d '{"topic":"doble-rendija","sessionId":"demo"}' -H "Content-Type: application/json"` → debe devolver JSON válido con `modalities.length >= 2`.
 
-**Hora 3 — Componente y home (02:00–03:00)**
-- Crear `components/StudyCapsule.tsx` siguiendo el §8.
-- Crear `components/DemoFlow.tsx` que lea `step` del store y renderice `<StudyCapsule />` cuando `step === "capsule"`. Cuando branches 2 y 3 mergeen, agregarán sus componentes al switch.
-- En `app/page.tsx`: hero con título del producto + `<DemoFlow />`.
-- Verificar visual en el navegador, ajustar Tailwind.
+**Hora 3 — Componentes Vue y home (02:00–03:00)**
+- Crear `sai-web/components/StudyCapsule.vue` siguiendo el §8.
+- Crear `sai-web/components/DemoFlow.vue` que lea `step` del Pinia store y renderice `<StudyCapsule />` cuando `step === "capsule"`. Cuando branches 2 y 3 mergeen, agregarán sus componentes al switch.
+- En `sai-web/pages/index.vue`: hero + `<DemoFlow />`. Llamar `$fetch` contra `NUXT_PUBLIC_API_BASE + "/api/capsules/generate"` en `onMounted`.
+- Verificar visual en navegador, ajustar Tailwind.
 
 **Hora 4 — Pre-generación de assets y polish (03:00–04:00)**
-- Ir a https://platform.openai.com/playground/images o Gemini AI Studio, generar la imagen del experimento de doble rendija. Prompt sugerido: "Cinematic illustration of the double-slit experiment, photons hitting a screen forming an interference pattern, dark background, glowing particles, scientific style, no text, 16:9". Descargar como `capsule-doble-rendija.png`, copiar a `/public`.
-- Audio: la opción más rápida es **Web Speech API en runtime** (`new SpeechSynthesisUtterance(body)`) en lugar de pre-grabar. Si tienen ElevenLabs, generar mp3 con voz "Bella" o similar y guardarlo en `/public`.
-- Smoke test: `npm run dev`, abrir el browser, hit reload 5 veces, verificar que la cápsula siempre carga bien.
+- Generar imagen en OpenAI Images Playground o Gemini AI Studio. Prompt sugerido: "Cinematic illustration of the double-slit experiment, photons hitting a screen forming an interference pattern, dark background, glowing particles, scientific style, no text, 16:9". Descargar como `capsule-doble-rendija.png`, copiar a `sai-server/assets/`.
+- Audio: lo más rápido es **Web Speech API en runtime en el browser** (`new SpeechSynthesisUtterance(body)` desde Vue). Si hay tiempo, generar mp3 con Gemini TTS y guardar en `sai-server/assets/`.
+- Servir assets vía `r.Static("/api/assets", "./assets")` (arch §2.1).
+- Smoke test: `go run ./cmd/server` + `npm run dev` (sai-web), reload 5 veces, verificar que la cápsula siempre carga bien.
 - Push final a `main`.
 
 ---
 
 ## 10. Definition of Done
 
-- [ ] `npm run dev` levanta sin errores.
+- [ ] `go run ./cmd/server` (sai-server) y `npm run dev` (sai-web) levantan sin errores.
 - [ ] `localhost:3000` muestra la cápsula con imagen, texto, audio button funcional.
-- [ ] Tipos en `lib/store.ts` están exportados y son los del §6.1 exactos.
-- [ ] El endpoint `POST /api/capsules/generate` responde el envelope del §6.2 exacto, con `modalities.length >= 2` (texto + imagen + audio).
-- [ ] El botón "Continuar al quiz" cambia el step en el Zustand a `"quiz"` (aunque renderice un placeholder "Quiz coming from branch 2").
-- [ ] `main` tiene un commit `chore: scaffold + capsule (controlled UI)` que las otras 3 branches pueden rebasear.
+- [ ] Tipos en `sai-server/internal/types/genui.go` y `sai-web/types/genui.ts` exportados y son los del §6.1 exactos (mismos field names, mismo JSON shape).
+- [ ] El endpoint `POST /api/capsules/generate` (Go handler) responde el envelope del §6.2 exacto, con `modalities >= 2` (texto + imagen + audio).
+- [ ] El botón "Continuar al quiz" cambia el step en el Pinia store a `"quiz"` (aunque renderice un placeholder "Quiz coming from branch 2").
+- [ ] `main` tiene un commit `chore: scaffold sai-web + sai-server + capsule (controlled UI)` que las otras 3 branches pueden rebasear.
 - [ ] El README tiene una sección "Branch 1 — Capsule" con un screenshot.
 
 ---
 
 ## 11. Riesgos y fallbacks
 
-- **Claude devuelve JSON inválido.** Fallback: hardcodear el `body` y el `title` en `route.ts` y solo llamar a Claude si `process.env.ANTHROPIC_API_KEY` existe. El demo nunca debe romperse por una llamada al LLM.
-- **shadcn/ui falla en init.** Fallback: HTML + Tailwind crudo. Es feo pero funciona.
+- **LLM devuelve JSON inválido.** Fallback: hardcodear `body` y `title` en `capsules.go` y solo llamar al LLM si `os.Getenv("OPENAI_API_KEY") != ""`. El demo nunca debe romperse por una llamada al LLM.
+- **shadcn-vue falla en init.** Fallback: HTML + Tailwind crudo. Es feo pero funciona.
 - **La imagen pre-generada tarda en aparecer.** Fallback: imagen de Unsplash con search term "physics quantum" cacheada localmente.
 - **El audio no suena en el demo.** Fallback: omitir audio del demo, no es bloqueante. La narrativa puede decir "imagine podríamos también incluir audio TTS" y dejarlo como future work.
 
@@ -277,8 +373,8 @@ Inspiración: el card de Linear que muestra un issue. Limpio, denso, no decorati
 
 Al terminar, esta branch deja en `main`:
 
-1. El scaffold completo (las otras 3 nunca tocan `package.json`, `next.config.ts`, `tailwind.config.ts`, `globals.css`).
-2. `lib/store.ts` con los tipos del demo. Las otras 3 branches solo extienden el union type, no lo modifican.
-3. Rutas alineadas con ARCHITECTURE §2.1: `app/api/capsules/generate/route.ts` (esta branch). Branch 2 agrega `/api/sessions/[id]/next` + `/api/sessions/[id]/quiz/answer`. Branch 3 agrega `/api/sessions/[id]/socratic/response`. Cliente puede swap a backend Go cambiando solo el base URL.
-4. `components/DemoFlow.tsx` con el switch sobre `step`. Branches 2 y 3 agregan sus componentes al switch.
+1. El scaffold completo de ambos repos (las otras 3 nunca tocan `package.json`, `nuxt.config.ts`, `tailwind.config.ts`, `go.mod`, `cmd/server/main.go`).
+2. `sai-server/internal/types/genui.go` + `sai-web/types/genui.ts` con los tipos del demo. Las otras 3 branches solo extienden el union, no lo modifican.
+3. Handlers Go alineados con ARCHITECTURE §2.1: `internal/handlers/capsules.go` (esta branch). Branch 2 agrega `/api/sessions/:id/next` + `/api/sessions/:id/quiz/answer`. Branch 3 agrega `/api/sessions/:id/socratic/response`.
+4. `sai-web/components/DemoFlow.vue` con el switch sobre `step`. Branches 2 y 3 agregan sus componentes al switch.
 5. Un mensaje en Slack/Discord al equipo: "main listo, hagan rebase y arranquen branches 2-4".

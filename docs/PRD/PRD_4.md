@@ -86,22 +86,36 @@ hace 5 segundos. Endpoint: `POST /api/sessions/{id}/socratic/response`.
 
 ## Stack
 
-- Next.js 15 (App Router) + TypeScript
-- Anthropic Claude Sonnet 4.5 vía SDK directo
-- Tailwind CSS 4 + shadcn/ui
-- Zustand para estado
-- @dnd-kit para drag-and-drop en quiz kinestésico
-- Mini-renderer A2UI propio (~150 líneas, shape Surface alineado con `docs/ARCHITECTURE.md` §3.1)
-- Rutas alineadas con backend Go futuro (`docs/ARCHITECTURE.md` §2.1) — el frontend puede swap de Next.js routes a backend Go cambiando solo la base URL
+**Frontend `sai-web/`:**
+- Nuxt 3 + Vue 3 + TypeScript
+- Tailwind CSS via `@nuxtjs/tailwindcss` + shadcn-vue
+- Pinia para estado
+- `vue-draggable-plus` para drag-and-drop en quiz kinestésico
+- Mini-renderer A2UI propio (~150 líneas Vue, shape Surface alineado con `docs/ARCHITECTURE.md` §3.1)
+
+**Backend `sai-server/`:**
+- Go 1.22+ + Gin
+- `go-openai` (GPT-4o, arch §1.2)
+- `log/slog` stdlib
+- SQLite o in-memory (Postgres/Redis/Docker en roadmap)
+- Rutas exactas a ARCHITECTURE.md §2.1
 
 ## Cómo correrlo
 
 \`\`\`bash
 git clone https://github.com/Ricardoyesc/study-sessions-ai
 cd study-sessions-ai
+
+# Backend
+cd sai-server
+echo "OPENAI_API_KEY=sk-..." > .env
+go run ./cmd/server  # localhost:8080
+
+# Frontend (otra terminal)
+cd ../sai-web
+echo "NUXT_PUBLIC_API_BASE=http://localhost:8080" > .env
 npm install
-echo "ANTHROPIC_API_KEY=tu-key" > .env.local
-npm run dev
+npm run dev  # localhost:3000
 \`\`\`
 
 Abrir http://localhost:3000.
