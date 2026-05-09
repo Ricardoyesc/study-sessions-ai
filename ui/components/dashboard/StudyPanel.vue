@@ -1,4 +1,6 @@
 <script setup>
+import SurfaceRenderer from '~/components/a2ui/SurfaceRenderer.vue'
+
 const props = defineProps({
   surface: {
     type: Object,

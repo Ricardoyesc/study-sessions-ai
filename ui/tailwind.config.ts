@@ -12,16 +12,17 @@ export default {
   theme: {
     extend: {}
   },
-  plugins: [daisyui],
-  daisyui: {
-    themes: [
-      'light',
-      'dark',
-      'cupcake',
-      'corporate',
-      'emerald',
-      'winter',
-      'night'
-    ]
-  }
+  plugins: [
+    daisyui({
+      themes: [
+        'light',
+        'dark --prefersdark',
+        'cupcake',
+        'corporate  --default',
+        'emerald',
+        'winter',
+        'night'
+      ]
+    })
+  ]
 }
