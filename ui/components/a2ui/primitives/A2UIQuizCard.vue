@@ -39,14 +39,14 @@ function submitAnswer() {
 </script>
 
 <template>
-  <section class="rounded-lg border border-base-300 bg-base-100 p-4">
+  <section class="a2ui-panel-enter rounded-lg border border-base-300 bg-base-100 p-4 transition duration-200 ease-out hover:shadow-md motion-reduce:transition-none">
     <p class="mb-3 font-semibold text-neutral">{{ question }}</p>
 
     <div class="grid gap-2">
       <button
         v-for="option in normalizedOptions"
         :key="option"
-        class="btn justify-start text-left"
+        class="btn justify-start text-left transition duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none"
         :class="selected.includes(option) ? 'btn-primary' : 'btn-outline'"
         type="button"
         @click="toggleOption(option)"
@@ -62,3 +62,27 @@ function submitAnswer() {
     </div>
   </section>
 </template>
+
+<style scoped>
+.a2ui-panel-enter {
+  animation: a2ui-panel-enter 200ms ease-out both;
+}
+
+@keyframes a2ui-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a2ui-panel-enter {
+    animation: none;
+  }
+}
+</style>

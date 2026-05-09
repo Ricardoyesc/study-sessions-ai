@@ -23,7 +23,7 @@ const rowClass = computed(() => {
   }
 
   return [
-    'flex flex-col sm:flex-row sm:items-center',
+    'a2ui-layout-enter flex flex-col sm:flex-row sm:items-center',
     props.wrap ? 'flex-wrap' : 'flex-nowrap',
     alignmentClasses[props.alignment] ?? alignmentClasses.start
   ]
@@ -37,3 +37,27 @@ const rowStyle = computed(() => ({ gap: `${props.gap}px` }))
     <slot />
   </div>
 </template>
+
+<style scoped>
+.a2ui-layout-enter {
+  animation: a2ui-soft-enter 180ms ease-out both;
+}
+
+@keyframes a2ui-soft-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a2ui-layout-enter {
+    animation: none;
+  }
+}
+</style>

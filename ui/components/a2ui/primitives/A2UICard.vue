@@ -24,7 +24,7 @@ const cardClass = computed(() => {
   }
 
   return [
-    'rounded-lg border',
+    'rounded-lg border transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none',
     tones[props.tone] ?? tones.base,
     props.elevation > 0 ? 'shadow-sm' : ''
   ]

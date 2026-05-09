@@ -25,7 +25,10 @@ const buttonClass = computed(() => {
     ghost: 'btn-ghost'
   }
 
-  return ['btn btn-sm', variants[props.variant] ?? variants.primary]
+  return [
+    'btn btn-sm transition duration-200 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] motion-reduce:transform-none motion-reduce:transition-none',
+    variants[props.variant] ?? variants.primary
+  ]
 })
 </script>
 

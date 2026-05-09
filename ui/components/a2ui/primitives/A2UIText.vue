@@ -44,7 +44,31 @@ const textClass = computed(() => {
 </script>
 
 <template>
-  <component :is="tag" :class="textClass">
+  <component :is="tag" :class="['a2ui-text-enter', textClass]">
     {{ content }}
   </component>
 </template>
+
+<style scoped>
+.a2ui-text-enter {
+  animation: a2ui-text-enter 160ms ease-out both;
+}
+
+@keyframes a2ui-text-enter {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a2ui-text-enter {
+    animation: none;
+  }
+}
+</style>

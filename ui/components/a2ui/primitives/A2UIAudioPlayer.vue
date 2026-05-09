@@ -12,5 +12,31 @@ defineProps({
 </script>
 
 <template>
-  <audio class="w-full" controls :autoplay="autoPlay" :src="url" />
+  <div class="a2ui-media-enter rounded-lg transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-sm motion-reduce:transform-none motion-reduce:transition-none">
+    <audio class="w-full" controls :autoplay="autoPlay" :src="url" />
+  </div>
 </template>
+
+<style scoped>
+.a2ui-media-enter {
+  animation: a2ui-media-enter 220ms ease-out both;
+}
+
+@keyframes a2ui-media-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a2ui-media-enter {
+    animation: none;
+  }
+}
+</style>

@@ -22,7 +22,7 @@ const columnClass = computed(() => {
     end: 'items-end'
   }
 
-  return ['flex flex-col', alignmentClasses[props.alignment] ?? alignmentClasses.stretch]
+  return ['a2ui-layout-enter flex flex-col', alignmentClasses[props.alignment] ?? alignmentClasses.stretch]
 })
 
 const columnStyle = computed(() => ({
@@ -36,3 +36,27 @@ const columnStyle = computed(() => ({
     <slot />
   </div>
 </template>
+
+<style scoped>
+.a2ui-layout-enter {
+  animation: a2ui-soft-enter 180ms ease-out both;
+}
+
+@keyframes a2ui-soft-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a2ui-layout-enter {
+    animation: none;
+  }
+}
+</style>

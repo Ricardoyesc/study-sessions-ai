@@ -39,7 +39,7 @@ const frameClass = computed(() => {
   }
 
   return [
-    'group h-60 w-full min-w-0 rounded-lg border text-left perspective-normal focus:outline-none focus:ring-2 focus:ring-primary/40',
+    'group h-60 w-full min-w-0 rounded-lg border text-left perspective-normal transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/40 motion-reduce:transform-none motion-reduce:transition-none',
     tones[props.tone] ?? tones.base
   ]
 })
