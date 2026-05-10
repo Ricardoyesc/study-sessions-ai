@@ -68,7 +68,7 @@ export function useStudySession() {
     try {
       const resp = await $fetch<NextItemResponse>(
         `${config.public.apiBase}/api/sessions/${sessionId.value}/next?topic=${encodeURIComponent(sessionTopic.value)}`,
-        { timeout: 15000, headers: authHeaders(token.value) }
+        { timeout: 60000, headers: authHeaders(token.value) }
       )
       sessionState.value = resp.state
       currentSurface.value = resp.surface

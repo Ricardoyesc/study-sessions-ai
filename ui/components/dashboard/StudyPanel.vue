@@ -2,40 +2,18 @@
 import SurfaceRenderer from '~/components/a2ui/SurfaceRenderer.vue'
 
 const props = defineProps({
-  surface: {
-    type: Object,
-    default: null
-  },
-  state: {
-    type: String,
-    default: 'idle'
-  },
-  topic: {
-    type: String,
-    default: ''
-  },
-  feedback: {
-    type: String,
-    default: null
-  },
-  isCorrect: {
-    type: Boolean,
-    default: null
-  },
-  loading: {
-    type: Boolean,
-    default: false
-  },
-  isActive: {
-    type: Boolean,
-    default: false
-  }
+  surface: { type: Object, default: null },
+  state: { type: String, default: 'idle' },
+  topic: { type: String, default: '' },
+  feedback: { type: String, default: null },
+  isCorrect: { type: Boolean, default: null },
+  loading: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['start', 'next', 'answer', 'socraticResponse', 'close'])
 
 const inputTopic = ref('Método Científico')
-const selectedOption = ref(null)
 const socraticText = ref('')
 
 const stateLabel = {
@@ -54,19 +32,35 @@ const stateColor = {
   completed: 'badge-success'
 }
 
-function handleAnswer(index) {
-  selectedOption.value = index
-  emit('answer', index)
+function handleA2UIEvent(event) {
+  if (event.componentType === 'QuizCard' && event.eventName === 'submit') {
+    const answer = event.payload && event.payload.answer
+    if (props.surface) {
+      const quizCard = props.surface.components[event.componentId]
+      const options = (quizCard && quizCard.props && quizCard.props.options) || []
+      const optionIndex = options.indexOf(answer)
+      emit('answer', optionIndex >= 0 ? optionIndex : 0)
+    } else {
+      emit('answer', 0)
+    }
+    return
+  }
+  if (event.componentType === 'SocraticDialog' && event.eventName === 'submit') {
+    const response = (event.payload && event.payload.response) || ''
+    if (response.trim()) {
+      emit('socraticResponse', response)
+    }
+    return
+  }
 }
 
-async function handleSocraticSubmit() {
+function handleSocraticSubmit() {
   if (!socraticText.value.trim()) return
   emit('socraticResponse', socraticText.value)
   socraticText.value = ''
 }
 
 function resetAndNext() {
-  selectedOption.value = null
   emit('next')
 }
 </script>
@@ -116,21 +110,18 @@ function resetAndNext() {
           <span>Tema: <strong>{{ topic }}</strong></span>
         </div>
 
-        <SurfaceRenderer v-if="surface" :surface="surface" :component-id="surface.rootComponent" />
+        <SurfaceRenderer
+          v-if="surface"
+          :surface="surface"
+          :component-id="surface.rootComponent"
+          @a2ui-event="handleA2UIEvent"
+        />
 
         <div v-if="feedback" class="alert" :class="isCorrect ? 'alert-success' : 'alert-error'">
           <span>{{ feedback }}</span>
         </div>
 
         <div class="flex flex-wrap gap-2 pt-2">
-          <button
-            v-if="state === 'quiz'"
-            class="btn btn-primary btn-sm shadow-sm"
-            @click="handleAnswer(selectedOption ?? 0)"
-          >
-            Enviar respuesta ({{ (selectedOption ?? 0) + 1 }})
-          </button>
-
           <div v-if="state === 'remediation' || (feedback && !isCorrect)" class="flex flex-col gap-2 w-full">
             <textarea
               v-model="socraticText"
